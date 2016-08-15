@@ -17,7 +17,8 @@ import Time exposing (Time, second)
 
 -- MODEL
 
-type TimeZone = IST | PST | UTC
+type TimeZone = 
+    IST | PST | UTC | WAT
 
 type alias Model = 
     { timeZone: TimeZone
@@ -30,11 +31,20 @@ init timeZone =
   ({timeZone = timeZone, currentTime = 0}, Cmd.none)
 
 
-timezomeAdjustments = 
-    [ (IST, 5.5 * 60 * 60 * 1000)
-    , (PST, -(7 * 60 * 60 * 1000))
-    , (UTC, 0)
-    ]
+timezomeAdjustments tz = 
+    case tz of
+        PST -> -(7 * 60 * 60 * 1000)
+        UTC -> 0
+        WAT -> 1 * 60 * 60 * 1000
+        IST -> 5.5 * 60 * 60 * 1000
+        
+
+city tz = 
+    case tz of
+        IST -> "New Delhi"
+        PST -> "Los Angeles"
+        UTC -> "London"
+        WAT -> "Cameroon"
     
 -- UPDATE
 
@@ -61,7 +71,7 @@ subscriptions model =
 hoursCorrectionForMinutes model = 
     -- degrees (toFloat ((floor (Time.inMinutes model)) % 60) / 2)
     (toFloat ((floor (Time.inMinutes model)) % 60)) / 2
-    
+
 hourHand model = 
     let
         angle =
@@ -101,26 +111,20 @@ secondHand model =
     in
         line [ x1 "50", y1 "50", x2 handX, y2 handY, stroke "#023963" ] []
 
+        
 -- VIEW
 view clockColor model = 
     Html.div [] 
-        [ Html.div [Html.Attributes.style [("color", "white"), ("text-align", "center")]] [text (toString model.timeZone)]
+        [ Html.div 
+            [Html.Attributes.style [("color", "white"), ("text-align", "center")]] 
+            [text (city model.timeZone)]
         , clock clockColor model
         ]
 
-getAdjustment a =
-    case a of
-        Nothing -> 0
-        Just (_, adjustment) -> adjustment
-        
 getMilliseconds : Model -> Float
 getMilliseconds model =
-    let 
-        tzAdjustment = List.head (List.filter (\(tz, a) -> tz == model.timeZone) timezomeAdjustments)
-        adjustment = getAdjustment tzAdjustment
-    in
-        model.currentTime + adjustment
-        
+    model.currentTime + (timezomeAdjustments model.timeZone)
+    
 -- view : Model -> Html Msg
 clock clockColor model =
     svg [ viewBox "0 0 100 100", width "300px" ]

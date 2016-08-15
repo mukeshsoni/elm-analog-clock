@@ -4,15 +4,15 @@ render
     , update = update
     , subscriptions = subscriptions
     }
-    
-render  
+
+render    
     { init = init PST
     , view = view "pink"
     , update = update
     , subscriptions = subscriptions
     }
-    
-render  
+
+render    
     { init = init UTC
     , view = view "aqua"
     , update = update
