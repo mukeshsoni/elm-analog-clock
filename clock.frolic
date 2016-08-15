@@ -1,0 +1,21 @@
+render    
+    { init = init IST
+    , view = view "white"
+    , update = update
+    , subscriptions = subscriptions
+    }
+    
+render  
+    { init = init PST
+    , view = view "pink"
+    , update = update
+    , subscriptions = subscriptions
+    }
+    
+render  
+    { init = init UTC
+    , view = view "aqua"
+    , update = update
+    , subscriptions = subscriptions
+    }
+    

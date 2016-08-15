@@ -1,15 +1,14 @@
 import Html exposing (Html)
 import Html.App as Html
+import Html.Attributes
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Time exposing (Time, second)
 
-
-
 -- main =
 --   Html.program
 --     { init = init
---     , view = view
+--     , view = view "blue"
 --     , update = update
 --     , subscriptions = subscriptions
 --     }
@@ -18,16 +17,25 @@ import Time exposing (Time, second)
 
 -- MODEL
 
+type TimeZone = IST | PST | UTC
 
-type alias Model = Time
-
-
-init : (Model, Cmd Msg)
-init =
-  (0, Cmd.none)
-
+type alias Model = 
+    { timeZone: TimeZone
+    , currentTime: Time
+    }
 
 
+init : TimeZone -> (Model, Cmd Msg)
+init timeZone =
+  ({timeZone = timeZone, currentTime = 0}, Cmd.none)
+
+
+timezomeAdjustments = 
+    [ (IST, 5.5 * 60 * 60 * 1000)
+    , (PST, -(7 * 60 * 60 * 1000))
+    , (UTC, 0)
+    ]
+    
 -- UPDATE
 
 
@@ -39,7 +47,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Tick newTime ->
-      (newTime, Cmd.none)
+      ({model | currentTime = newTime}, Cmd.none)
 
 
 
@@ -65,7 +73,7 @@ hourHand model =
         handY =
           toString (50 + 25 * sin angle)
     in
-        line [ x1 "50", y1 "50", x2 handX, y2 handY, stroke "red" ] []
+        line [ strokeWidth "2px", x1 "50", y1 "50", x2 handX, y2 handY, stroke "black" ] []
 
 minuteHand model = 
     let
@@ -78,7 +86,7 @@ minuteHand model =
         handY =
           toString (50 + 33 * sin angle)
     in
-        line [ x1 "50", y1 "50", x2 handX, y2 handY, stroke "white" ] []
+        line [ strokeWidth "3px", x1 "50", y1 "50", x2 handX, y2 handY, stroke "black" ] []
 
 secondHand model = 
     let
@@ -96,37 +104,30 @@ secondHand model =
 -- VIEW
 view clockColor model = 
     Html.div [] 
-        [ text "the clock"
+        [ Html.div [Html.Attributes.style [("color", "white"), ("text-align", "center")]] [text (toString model.timeZone)]
         , clock clockColor model
         ]
 
+getAdjustment a =
+    case a of
+        Nothing -> 0
+        Just (_, adjustment) -> adjustment
+        
+getMilliseconds : Model -> Float
+getMilliseconds model =
+    let 
+        tzAdjustment = List.head (List.filter (\(tz, a) -> tz == model.timeZone) timezomeAdjustments)
+        adjustment = getAdjustment tzAdjustment
+    in
+        model.currentTime + adjustment
+        
 -- view : Model -> Html Msg
 clock clockColor model =
-  let
-    angle =
-      turns (Time.inMinutes model)
-
-    handX =
-      toString (50 + 40 * cos angle)
-
-    handY =
-      toString (50 + 40 * sin angle)
-  in
     svg [ viewBox "0 0 100 100", width "300px" ]
-      [ circle [ cx "50", cy "50", r "45", fill clockColor ] []
-      , line [ x1 "50", y1 "5", x2 "50.00", y2 "10", stroke "#023963" ] []
-      , line [ x1 "72.50", y1 "11.03", x2 "70.00", y2 "15.36", stroke "#023963" ] []
-      , line [ x1 "88.97", y1 "27.50", x2 "84.64", y2 "30.00", stroke "#023963" ] []
-      , line [ x1 "95.00", y1 "50.00", x2 "90.00", y2 "50.00", stroke "#023963" ] []
-      , line [ x1 "88.97", y1 "72.50", x2 "84.64", y2 "70.00", stroke "#023963" ] []
-      , line [ x1 "72.50", y1 "88.97", x2 "70.00", y2 "84.64", stroke "#023963" ] []
-      , line [ x1 "50.00", y1 "95.00", x2 "50.00", y2 "90.00", stroke "#023963" ] []
-      , line [ x1 "27.50", y1 "88.97", x2 "30.00", y2 "84.64", stroke "#023963" ] []
-      , line [ x1 "11.03", y1 "72.50", x2 "15.36", y2 "70.00", stroke "#023963" ] []
-      , line [ x1 "5.000", y1 "50.00", x2 "10.00", y2 "50.00", stroke "#023963" ] []
-      , line [ x1 "11.03", y1 "27.50", x2 "15.36", y2 "30.00", stroke "#023963" ] []
-      , line [ x1 "27.50", y1 "11.03", x2 "30.00", y2 "15.36", stroke "#023963" ] []
-      , secondHand model
-      , minuteHand model
-      , hourHand model
+        [ circle [ cx "50", cy "50", r "45", fill clockColor ] []
+        , secondHand (getMilliseconds model)
+        , minuteHand (getMilliseconds model)
+        , hourHand (getMilliseconds model)
       ]
+
+
