@@ -19,3 +19,10 @@ render
     , subscriptions = subscriptions
     }
     
+render    
+    { init = init WAT
+    , view = view "beige"
+    , update = update
+    , subscriptions = subscriptions
+    }
+
